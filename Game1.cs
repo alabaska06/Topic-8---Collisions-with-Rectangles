@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace Topic_8___Collisions_with_Rectangles
 {
@@ -23,7 +24,7 @@ namespace Topic_8___Collisions_with_Rectangles
         Rectangle pacRect; 
 
         Texture2D exitTexture;
-        Rectangle exitRect;
+        Rectangle exitRect, exitRect2;
 
         Texture2D barrierTexture;
         List<Rectangle> barriers;
@@ -31,7 +32,7 @@ namespace Topic_8___Collisions_with_Rectangles
         Texture2D coinTexture;
         List<Rectangle> coins;
 
-        List<Vector2> coinsPosition;
+        List<Rectangle> collisionRects;
 
         int pacSpeed;
 
@@ -46,21 +47,34 @@ namespace Topic_8___Collisions_with_Rectangles
         {
             // TODO: Add your initialization logic here
 
+
             base.Initialize();
+
+
 
             pacSpeed = 3;
             pacRect = new Rectangle(10, 10, 60, 60);
             barriers = new List<Rectangle>();
-            barriers.Add(new Rectangle(0, 250, 350, 75));
-            barriers.Add(new Rectangle(450, 250, 350, 75));
+            barriers.Add(new Rectangle(0, 100, 300, 75));
+            barriers.Add(new Rectangle(400, 250, 400, 75));
+            barriers.Add(new Rectangle(225, 100, 75, 225));
+            barriers.Add(new Rectangle(400, 0, 75, 150));
+            barriers.Add(new Rectangle(575, 100, 75, 150));
+            barriers.Add(new Rectangle(225, 400, 75, 150));
+            barriers.Add(new Rectangle(70, 300, 75, 200));
+
 
             coins = new List<Rectangle>();
-            coins.Add(new Rectangle(400, 50, coinTexture.Width, coinTexture.Height));
-            coins.Add(new Rectangle(475, 50, coinTexture.Width, coinTexture.Height));
-            coins.Add(new Rectangle(200, 300, coinTexture.Width, coinTexture.Height));
-            coins.Add(new Rectangle(400, 300, coinTexture.Width, coinTexture.Height));
 
             exitRect = new Rectangle(700, 380, 100, 100);
+            exitRect2 = new Rectangle(700, 0, 100, 100);
+
+
+            collisionRects = new List<Rectangle>();
+            collisionRects.Add(exitRect);
+            collisionRects.Add(pacRect);
+            collisionRects.Add(exitRect2);
+            GenerateCoinPosition(20);
 
         }
 
@@ -75,6 +89,7 @@ namespace Topic_8___Collisions_with_Rectangles
             coinTexture = Content.Load<Texture2D>("coin");
             barrierTexture = Content.Load<Texture2D>("rock_barrier");
             exitTexture = Content.Load<Texture2D>("hobbit_door");
+            
 
 
             // TODO: use this.Content to load your game content here
@@ -87,8 +102,6 @@ namespace Topic_8___Collisions_with_Rectangles
 
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
-
-            GenerateCoinPosition(numberOfCoins: 1);
 
             if (keyboardState.IsKeyDown(Keys.Left))
             {
@@ -172,7 +185,7 @@ namespace Topic_8___Collisions_with_Rectangles
                 if (exitRect.Contains(mouseState.X, mouseState.Y))
                     Exit();
 
-            if (exitRect.Contains(pacRect))
+            if (exitRect.Contains(pacRect) || exitRect2.Contains(pacRect))
                 Exit();
 
             // TODO: Add your update logic here
@@ -190,6 +203,7 @@ namespace Topic_8___Collisions_with_Rectangles
                 _spriteBatch.Draw(barrierTexture, barrier, Color.White);
 
             _spriteBatch.Draw(exitTexture, exitRect, Color.White);
+            _spriteBatch.Draw(exitTexture, exitRect2, Color.White);
             _spriteBatch.Draw(currentPacTexture, pacRect, Color.White);
 
             DrawCoins(_spriteBatch);
@@ -203,36 +217,49 @@ namespace Topic_8___Collisions_with_Rectangles
 
         void GenerateCoinPosition(int numberOfCoins)
         {
-            coinsPosition = new List<Vector2>();
+            Rectangle coinRect;
+            coins = new List<Rectangle>();
 
             Random random = new Random();
+            bool overlap;
+
 
             for (int i = 0; i < numberOfCoins; i++)
             {
-                Vector2 position = new Vector2(
-                    random.Next(0, GraphicsDevice.Viewport.Width),
-                    random.Next(0, GraphicsDevice.Viewport.Height));
+                overlap = false;
+                
 
-                Rectangle coinRect = new Rectangle((int)position.X, (int)position.Y, coinTexture.Width, coinTexture.Height);
-                bool overlap = false;
+                coinRect = new Rectangle(random.Next(0, _graphics.PreferredBackBufferWidth - coinTexture.Width), random.Next(0, _graphics.PreferredBackBufferHeight - coinTexture.Height), coinTexture.Width, coinTexture.Height);
+                
 
                 foreach (Rectangle barrier in barriers)
                 {
                     if (barrier.Intersects(coinRect))
-                        overlap = true;
-                    break;
-                }
-                foreach (Vector2 existingCoinPosition in coinsPosition)
-                {
-                if (Vector2.Distance(existingCoinPosition, position) < coinTexture.Width)
                     {
                         overlap = true;
                         break;
                     }
                 }
+                foreach (Rectangle coin in coins)
+                {
+                    if (coin.Intersects(coinRect))
+                    {
+                        overlap = true;
+                        break;
+                    }
+                }
+                foreach (Rectangle collision in collisionRects)
+                {
+                    if (collision.Intersects(coinRect))
+                    {
+                        overlap = true;
+                        break;
+                    }
+                }
+               
                 if (!overlap)
                 {
-                    coinsPosition.Add(position);
+                    coins.Add(coinRect);
                 }
                 else
                 {
@@ -242,9 +269,9 @@ namespace Topic_8___Collisions_with_Rectangles
         }
         void DrawCoins(SpriteBatch spriteBatch)
         {
-            foreach (Vector2 position in coinsPosition)
+            foreach (Rectangle coin in coins)
             {
-                spriteBatch.Draw(coinTexture, position, Color.White);
+                spriteBatch.Draw(coinTexture, coin, Color.White);
             }
         }
 
