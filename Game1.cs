@@ -182,7 +182,7 @@ namespace Topic_8___Collisions_with_Rectangles
             }
 
             if (mouseState.LeftButton == ButtonState.Pressed)
-                if (exitRect.Contains(mouseState.X, mouseState.Y))
+                if (exitRect.Contains(mouseState.X, mouseState.Y) || exitRect2.Contains(mouseState.X, mouseState.Y))
                     Exit();
 
             if (exitRect.Contains(pacRect) || exitRect2.Contains(pacRect))
